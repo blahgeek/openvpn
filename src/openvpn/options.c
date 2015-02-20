@@ -60,6 +60,10 @@
 
 #include "memdbg.h"
 
+extern char* _socket_obfs_salt;
+extern int _socket_obfs_salt_len;
+extern int _socket_obfs_padlen;
+
 const char title_string[] =
   PACKAGE_STRING
   " " TARGET_ALIAS
@@ -6996,6 +7000,19 @@ add_option (struct options *options,
       options->persist_mode = 1;
     }
 #endif
+  else if (streq (p[0], "obfs-salt") && p[1])
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      _socket_obfs_salt = p[1];
+      _socket_obfs_salt_len = strlen(_socket_obfs_salt);
+    }
+  else if (streq (p[0], "obfs-padlen") && p[1])
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      _socket_obfs_padlen = atoi(p[1]);
+      if (_socket_obfs_padlen < 0) 
+       msg(M_ERR, "--obfs-padlen must be positive");
+    }
   else if (streq (p[0], "peer-id"))
     {
       VERIFY_PERMISSION (OPT_P_PEER_ID);
