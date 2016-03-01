@@ -237,8 +237,7 @@ int cipher_kt_mode (const cipher_kt_t *cipher_kt);
  *
  * @return		true iff the cipher is a CBC mode cipher.
  */
-bool cipher_kt_mode_cbc(const cipher_kt_t *cipher)
-  __attribute__((nonnull));
+bool cipher_kt_mode_cbc(const cipher_kt_t *cipher);
 
 /**
  * Check if the supplied cipher is a supported OFB or CFB mode cipher.
@@ -247,8 +246,7 @@ bool cipher_kt_mode_cbc(const cipher_kt_t *cipher)
  *
  * @return		true iff the cipher is a OFB or CFB mode cipher.
  */
-bool cipher_kt_mode_ofb_cfb(const cipher_kt_t *cipher)
-  __attribute__((nonnull));
+bool cipher_kt_mode_ofb_cfb(const cipher_kt_t *cipher);
 
 
 /**
@@ -335,7 +333,7 @@ int cipher_ctx_reset (cipher_ctx_t *ctx, uint8_t *iv_buf);
  * Note that if a complete block cannot be written, data is cached in the
  * context, and emitted at a later call to \c cipher_ctx_update, or by a call
  * to \c cipher_ctx_final(). This implies that dst should have enough room for
- * src_len + \c cipher_ctx_block_size() - 1.
+ * src_len + \c cipher_ctx_block_size().
  *
  * @param ctx 		Cipher's context. May not be NULL.
  * @param dst		Destination buffer

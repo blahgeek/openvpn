@@ -42,6 +42,7 @@
 #include "manage.h"
 #include "win32.h"
 #include "options.h"
+#include "win32.h"
 
 #include "memdbg.h"
 
@@ -390,7 +391,7 @@ init_route_ipv6 (struct route_ipv6 *r6,
 {
   r6->defined = false;
 
-  if ( !get_ipv6_addr( r6o->prefix, &r6->network, &r6->netbits, NULL, M_WARN ))
+  if ( !get_ipv6_addr( r6o->prefix, &r6->network, &r6->netbits, M_WARN ))
     goto fail;
 
   /* gateway */
@@ -648,7 +649,7 @@ init_route_list (struct route_list *rl,
     bool warned = false;
     for (i = 0; i < opt->n; ++i)
       {
-        struct addrinfo* netlist;
+        struct addrinfo* netlist = NULL;
 	struct route_ipv4 r;
 
 	if (!init_route (&r,
@@ -675,8 +676,9 @@ init_route_list (struct route_list *rl,
 		      }
 		  }
 	      }
-            freeaddrinfo(netlist);
 	  }
+	if (netlist)
+	  freeaddrinfo(netlist);
       }
     rl->n = j;
   }
@@ -838,7 +840,7 @@ redirect_default_route_to_vpn (struct route_list *rl, const struct tuntap *tt, u
 
   if ( rl && rl->flags & RG_ENABLE )
     {
-      if (!(rl->spec.flags & RTSA_REMOTE_ENDPOINT))
+      if (!(rl->spec.flags & RTSA_REMOTE_ENDPOINT) && (rl->flags & RG_REROUTE_GW))
 	{
 	  msg (M_WARN, "%s VPN gateway parameter (--route-gateway or --ifconfig) is missing", err);
 	}
@@ -1622,6 +1624,13 @@ add_route_ipv6 (struct route_ipv6 *r6, const struct tuntap *tt, unsigned int fla
 
 #elif defined (WIN32)
 
+  if (win32_version_info() != WIN_XP)
+    {
+      struct buffer out = alloc_buf_gc (64, &gc);
+      buf_printf (&out, "interface=%d", tt->adapter_index );
+      device = buf_bptr(&out);
+    }
+
   /* netsh interface ipv6 add route 2001:db8::/32 MyTunDevice */
   argv_printf (&argv, "%s%sc interface ipv6 add route %s/%d %s",
 	       get_win_sys_path(),
@@ -1952,6 +1961,13 @@ delete_route_ipv6 (const struct route_ipv6 *r6, const struct tuntap *tt, unsigne
   openvpn_execve_check (&argv, es, 0, "ERROR: Linux route -6/-A inet6 del command failed");
 
 #elif defined (WIN32)
+
+  if (win32_version_info() != WIN_XP)
+    {
+      struct buffer out = alloc_buf_gc (64, &gc);
+      buf_printf (&out, "interface=%d", tt->adapter_index );
+      device = buf_bptr(&out);
+    }
 
   /* netsh interface ipv6 delete route 2001:db8::/32 MyTunDevice */
   argv_printf (&argv, "%s%sc interface ipv6 delete route %s/%d %s",
@@ -2601,7 +2617,7 @@ get_default_gateway (struct route_gateway_info *rgi)
   gc_free (&gc);
 }
 
-#elif defined(TARGET_FREEBSD)||defined(TARGET_DRAGONFLY)
+#elif defined(TARGET_FREEBSD)||defined(TARGET_DRAGONFLY)||defined(TARGET_SOLARIS)
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -2629,12 +2645,26 @@ get_default_gateway (struct route_gateway_info *rgi)
   struct sockaddr *gate = NULL, *sa;
   struct  rt_msghdr *rtm_aux;
 
+#if defined(TARGET_FREEBSD)||defined(TARGET_DRAGONFLY)
+
 #define NEXTADDR(w, u) \
         if (rtm_addrs & (w)) {\
             l = ROUNDUP(u.sa_len); memmove(cp, &(u), l); cp += l;\
         }
 
 #define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
+
+#else /* TARGET_SOLARIS */
+
+#define NEXTADDR(w, u) \
+        if (rtm_addrs & (w)) {\
+            l = ROUNDUP(sizeof(struct sockaddr_in)); memmove(cp, &(u), l); cp += l;\
+        }
+
+#define ADVANCE(x, n) (x += ROUNDUP(sizeof(struct sockaddr_in)))
+
+#endif
+
 
 #define rtm m_rtmsg.m_rtm
 
@@ -2655,9 +2685,12 @@ get_default_gateway (struct route_gateway_info *rgi)
   rtm.rtm_addrs = rtm_addrs; 
 
   so_dst.sa_family = AF_INET;
-  so_dst.sa_len = sizeof(struct sockaddr_in);
   so_mask.sa_family = AF_INET;
+
+#if defined(TARGET_FREEBSD)||defined(TARGET_DRAGONFLY)
+  so_dst.sa_len = sizeof(struct sockaddr_in);
   so_mask.sa_len = sizeof(struct sockaddr_in);
+#endif
 
   NEXTADDR(RTA_DST, so_dst);
   NEXTADDR(RTA_NETMASK, so_mask);
@@ -3178,7 +3211,7 @@ test_local_addr (const in_addr_t addr, const struct route_gateway_info *rgi)
 {
   struct gc_arena gc = gc_new ();
   const in_addr_t nonlocal_netmask = 0x80000000L; /* routes with netmask <= to this are considered non-local */
-  bool ret = TLA_NONLOCAL;
+  int ret = TLA_NONLOCAL;
 
   /* get full routing table */
   const MIB_IPFORWARDTABLE *rt = get_windows_routing_table (&gc);
