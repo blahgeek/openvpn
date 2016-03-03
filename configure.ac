@@ -793,6 +793,12 @@ if test "${have_openssl_crypto}" = "yes"; then
 	LIBS="${saved_LIBS}"
 fi
 
+have_openssl_engine="yes"
+AC_DEFINE([HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH])
+AC_DEFINE([HAVE_ENGINE_LOAD_BUILTIN_ENGINES])
+AC_DEFINE([HAVE_ENGINE_REGISTER_ALL_COMPLETE])
+AC_DEFINE([HAVE_ENGINE_CLEANUP])
+
 AC_ARG_VAR([POLARSSL_CFLAGS], [C compiler flags for polarssl])
 AC_ARG_VAR([POLARSSL_LIBS], [linker flags for polarssl])
 have_polarssl_ssl="yes"

@@ -3336,7 +3336,11 @@ foreign_option (struct options *o, char *argv[], int len, struct env_set *es)
 	    }
 	}
       if (good)
-	setenv_str (es, BSTR(&name), BSTR(&value));
+      {
+		setenv_str (es, BSTR(&name), BSTR(&value));
+		// Change for Viscosity (Mac)
+		msg (M_INFO, "viscosity_%s=%s", BSTR(&name), BSTR(&value));
+      }
       else
 	msg (M_WARN, "foreign_option: name/value overflow");
       gc_free (&gc);
@@ -5399,6 +5403,8 @@ add_option (struct options *options,
 	      goto err;
 	    }
 	}
+	// Viscosity
+	msg (M_INFO, "viscosity_route-gateway=%s", p[1]);
     }
   else if (streq (p[0], "route-metric") && p[1])
     {
