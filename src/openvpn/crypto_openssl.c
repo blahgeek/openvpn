@@ -27,6 +27,8 @@
  * @file Data Channel Cryptography OpenSSL-specific backend interface
  */
 
+#define ENABLE_OFB_CFB_MODE
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #elif defined(_MSC_VER)

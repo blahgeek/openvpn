@@ -1569,12 +1569,12 @@ add_route_ipv6 (struct route_ipv6 *r6, const struct tuntap *tt, unsigned int fla
   network = print_in6_addr_netbits_only( r6->network, r6->netbits, &gc);
   gateway = print_in6_addr( r6->gateway, 0, &gc);
 
-  if ( !tt->ipv6 )
+  /*if ( !tt->ipv6 )
     {
       msg( M_INFO, "add_route_ipv6(): not adding %s/%d, no IPv6 on if %s",
 		    network, r6->netbits, device );
       return;
-    }
+    }*/
 
   msg( M_INFO, "add_route_ipv6(%s/%d -> %s metric %d) dev %s",
 		network, r6->netbits, gateway, r6->metric, device );
@@ -1918,12 +1918,12 @@ delete_route_ipv6 (const struct route_ipv6 *r6, const struct tuntap *tt, unsigne
   network = print_in6_addr_netbits_only( r6->network, r6->netbits, &gc);
   gateway = print_in6_addr( r6->gateway, 0, &gc);
 
-  if ( !tt->ipv6 )
+  /*if ( !tt->ipv6 )
     {
       msg( M_INFO, "delete_route_ipv6(): not deleting %s/%d, no IPv6 on if %s",
 		    network, r6->netbits, device );
       return;
-    }
+    }*/
 
   msg( M_INFO, "delete_route_ipv6(%s/%d)", network, r6->netbits );
 
