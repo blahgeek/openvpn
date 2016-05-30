@@ -332,7 +332,8 @@ process_explicit_exit_notification_timer_wakeup (struct context *c)
 void
 remap_signal (struct context *c)
 {
-  if (c->sig->signal_received == SIGUSR1 && c->options.remap_sigusr1)
+  // Don't remap signals for challenge authentication failures
+  if (c->sig->signal_received == SIGUSR1 && c->options.remap_sigusr1 && strcmp(c->sig->signal_text, "auth-failure") != 0)
     c->sig->signal_received = c->options.remap_sigusr1;
 }
 

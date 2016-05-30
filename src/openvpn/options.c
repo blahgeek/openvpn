@@ -5399,6 +5399,8 @@ add_option (struct options *options,
 	      goto err;
 	    }
 	}
+	// Viscosity
+	msg (M_INFO, "viscosity_route-gateway=%s", p[1]);
     }
   else if (streq (p[0], "route-metric") && p[1])
     {
